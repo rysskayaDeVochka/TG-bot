@@ -16,69 +16,90 @@ ADMIN_CHAT_ID = -1002879409912
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
-links = {}
+links = {}  # {admin_message_id: {"user_id": int, "user_name": str}}
 
 @dp.message()
-async def handle_message(message: types.Message):
+async def handle_all_messages(message: types.Message):
+    # Сообщение от пользователя
     if message.chat.id != ADMIN_CHAT_ID:
-        logger.info(f"От {message.from_user.full_name}: {message.text}")
+        user_info = {
+            "user_id": message.from_user.id,
+            "user_name": message.from_user.full_name
+        }
         
-        # Пересылаем в группу
-        if message.text:
-            forwarded = await message.forward(ADMIN_CHAT_ID)
-            links[forwarded.message_id] = message.from_user.id
+        logger.info(f"📩 От {user_info['user_name']}: {message.text or message.content_type}")
+        
+        try:
+            # Пересылаем в группу
+            if message.photo:
+                forwarded = await bot.send_photo(
+                    ADMIN_CHAT_ID,
+                    message.photo[-1].file_id,
+                    caption=f"{message.caption or '📷 Фото'}\n\n👤 {user_info['user_name']}"
+                )
+            elif message.text:
+                forwarded = await message.forward(ADMIN_CHAT_ID)
+            elif message.document:
+                forwarded = await bot.send_document(
+                    ADMIN_CHAT_ID,
+                    message.document.file_id,
+                    caption=f"{message.caption or '📎 Документ'}\n\n👤 {user_info['user_name']}"
+                )
+            else:
+                return
             
-            # Подсказка
+            # Сохраняем связь
+            links[forwarded.message_id] = user_info
+            
+            # Подсказка админам
             await bot.send_message(
                 ADMIN_CHAT_ID,
                 "💬 Ответьте на сообщение выше\n#отправить",
                 reply_to_message_id=forwarded.message_id
             )
             
-            await message.answer("✅ Отправлено админам")
-
-# Кастомный обработчик с отладкой
-class DebugRequestHandler(SimpleRequestHandler):
-    async def _handle_request(self, bot, request):
-        try:
-            # Логируем входящий запрос
-            body = await request.text()
-            logger.info(f"📨 Входящий запрос ({len(body)} байт)")
-            
-            if not body or body.strip() == '':
-                logger.warning("⚠️ Пустое тело запроса")
-                return web.Response(text='Empty body', status=400)
-            
-            # Пробуем распарсить JSON
-            try:
-                data = json.loads(body)
-                logger.info(f"📊 JSON валиден, update_id: {data.get('update_id', 'none')}")
-            except json.JSONDecodeError as e:
-                logger.error(f"❌ Невалидный JSON: {e}")
-                logger.error(f"   Тело: {body[:200]}")
-                return web.Response(text='Invalid JSON', status=400)
-            
-            # Обрабатываем через родительский класс
-            return await super()._handle_request(bot, request)
+            await message.answer("✅ Сообщение передано администраторам")
+            logger.info(f"✅ Переслано в группу")
             
         except Exception as e:
-            logger.error(f"🔥 Необработанная ошибка: {e}")
-            return web.Response(text='Server Error', status=500)
+            logger.error(f"❌ Ошибка пересылки: {e}")
+    
+    # Ответ админа
+    elif message.reply_to_message:
+        user_info = links.get(message.reply_to_message.message_id)
+        
+        if user_info:
+            text = message.text or message.caption or ""
+            
+            if "#отправить" in text.lower():
+                clean_text = text.replace('#отправить', '').replace('#ОТПРАВИТЬ', '').strip()
+                
+                try:
+                    if message.photo:
+                        await bot.send_photo(
+                            user_info["user_id"],
+                            message.photo[-1].file_id,
+                            caption=f"📨 Ответ от администратора:\n{clean_text}"
+                        )
+                    else:
+                        await bot.send_message(
+                            user_info["user_id"],
+                            f"📨 Ответ от администратора:\n\n{clean_text}"
+                        )
+                    
+                    await message.reply(f"✅ Ответ отправлен {user_info['user_name']}")
+                    logger.info(f"✅ Ответ отправлен пользователю")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Ошибка отправки ответа: {e}")
 
 # Веб-приложение
 app = web.Application()
-
-# Используем кастомный обработчик
-handler = DebugRequestHandler(
-    dispatcher=dp,
-    bot=bot,
-    handle_in_background=False
-)
+handler = SimpleRequestHandler(dp, bot)
 handler.register(app, path="/webhook")
 
-# Корневой URL
 async def home_handler(request):
-    return web.Response(text="✅ Бот работает")
+    return web.Response(text="✅ Telegram Bot работает!")
 
 app.router.add_get('/', home_handler)
 
@@ -90,8 +111,12 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
     
-    logger.info(f"✅ Сервер запущен на порту {port}")
-    logger.info("✅ Ожидаю вебхук запросы")
+    logger.info("=" * 50)
+    logger.info("🤖 БОТ ЗАПУЩЕН И РАБОТАЕТ")
+    
+    logger.info(f"🌐 URL: https://tg-bot-production-5047.up.railway.app")
+    logger.info(f"👥 Админ группа: {ADMIN_CHAT_ID}")
+    logger.info("=" * 50)
     
     await asyncio.Future()
 
