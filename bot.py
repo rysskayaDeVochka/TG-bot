@@ -104,7 +104,7 @@ async def handle_message(message: types.Message):
                 except Exception as e:
                     logger.error(f"❌ Ошибка отправки ответа: {e}")
                     await message.reply(f"❌ Ошибка: {str(e)[:100]}")
-else:
+            else:
                 # Без #отправить - черновик
                 await message.reply("💭 Черновик сохранён (добавьте #отправить для отправки)")
 
@@ -150,6 +150,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
