@@ -1,14 +1,33 @@
 import os
+import sys
 import asyncio
 import logging
-from aiogram import Bot, Dispatcher, types
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler
-from aiohttp import web
-import sys
 
-# Конфигурация - ЖЁСТКО в коде
-BOT_TOKEN = "8287234268:AAGKxZay_fxm3_xQvGgQ0vE0gYB6UpjUPA8"
-ADMIN_CHAT_ID = -1002879409912
+# ВСЕГДА ПЕЧАТАТЬ ПЕРЕМЕННЫЕ
+print("=" * 50)
+print("🚀 Бот запускается...")
+print(f"Python: {sys.version}")
+print(f"Токен установлен: {'ДА' if os.getenv('BOT_TOKEN') else 'НЕТ'}")
+print("=" * 50)
+
+# Принудительно устанавливаем токен если нет переменной
+BOT_TOKEN = os.getenv("BOT_TOKEN") or "8287234268:AAGKxZay_fxm3_xQvGgQ0vE0gYB6UpjUPA8"
+ADMIN_CHAT_ID = int(os.getenv("ADMIN_CHAT_ID") or "-1002879409912")
+
+print(f"Используем токен: {BOT_TOKEN[:10]}...")
+print(f"Админ чат: {ADMIN_CHAT_ID}")
+
+# Теперь импортируем aiogram
+try:
+    from aiogram import Bot, Dispatcher, types
+    from aiogram.webhook.aiohttp_server import SimpleRequestHandler
+    from aiohttp import web
+    print("✅ Модули загружены")
+except ImportError as e:
+    print(f"❌ Ошибка импорта: {e}")
+    sys.exit(1)
+
+# ... остальной код без изменений ...
 
 # Настройка логирования в консоль
 logging.basicConfig(
@@ -150,6 +169,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
