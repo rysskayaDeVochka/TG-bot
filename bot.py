@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Конфигурация
 BOT_TOKEN = "8287234268:AAGKxZay_fxm3_xQvGgQ0vE0gYB6UpjUPA8"
-ADMIN_CHAT_ID = -1004107322998
+ADMIN_CHAT_ID = -4107322998
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -122,4 +122,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
