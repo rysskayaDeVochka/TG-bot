@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Конфигурация
 BOT_TOKEN = "8287234268:AAGKxZay_fxm3_xQvGgQ0vE0gYB6UpjUPA8"
-ADMIN_CHAT_ID = -1002879409912
+ADMIN_CHAT_ID = -1004107322998
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -54,7 +54,7 @@ async def handle_all_messages(message: types.Message):
             # Подсказка админам
             await bot.send_message(
                 ADMIN_CHAT_ID,
-                "💬 Ответьте на сообщение выше\n#отправить",
+                "💬 Ответьте на сообщение выше\nЧтобы отправить ответ, добавьте #отправить",
                 reply_to_message_id=forwarded.message_id
             )
             
@@ -122,3 +122,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
