@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiohttp import web
 import sys
+import aiogram.filters import Command
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
@@ -18,8 +19,14 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 links = {}  # {admin_message_id: {"user_id": int, "user_name": str}}
 
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    pass
+
 @dp.message()
 async def handle_all_messages(message: types.Message):
+    if message.text and message.text.startswith('/'):
+        return
     # Сообщение от пользователя
     if message.chat.id != ADMIN_CHAT_ID:
         user_info = {
@@ -122,5 +129,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
